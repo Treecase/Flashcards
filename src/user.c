@@ -19,17 +19,18 @@ void show_card (Card card) {
 }
 
 /* get_answer: read the user's answer */
-String get_answer() {
+String get_answer(void) {
 
     String r;
     r.str = low_input (-5);
-    r.len = wcslen (r.str);
+    r.len = r.str? wcslen (r.str) : 0;
 
     return r;
 }
 
 /* feedback: print feedback (eg correct/incorrect) */
 void feedback (char correct, Card card) {
+
     String s;
     s.str = correct? L"Correct!" : L"Incorrect...";
 

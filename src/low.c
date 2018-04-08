@@ -3,7 +3,7 @@
  *
  */
 
-#define _XOPEN_SOURCE_EXTENDED  // wide character ncurses
+#define _XOPEN_SOURCE_EXTENDED  /* wide character ncurses */
 #include <ncursesw/ncurses.h>
 #include <locale.h>
 #include <stdlib.h>
@@ -11,15 +11,12 @@
 #include <unistd.h>
 
 #include "low.h"
-
-
-int DEBUG;  // debug fd
+#include "error.h"
 
 
 
 /* drawstring: draw a string to the screen */
 void low_drawstring (int x, int y, wchar_t *str) {
-    dprintf (DEBUG, "'%ls' len: %lu\n", str, wcslen (str));
     if (str != NULL)
         mvaddwstr (CENTER_Y+y, (CENTER_X+x)-(wcslen (str)/2), str);
 }
@@ -54,8 +51,6 @@ wchar_t *low_input (int y) {
     while (c != '\n' && c != '\r') {
 
         skipc = 1;
-        dprintf (DEBUG, "%ls\n", str);
-        dprintf (DEBUG, "%i: %u\n", i, c);
 
         switch (c) {
         case KEY_BACKSPACE:
@@ -76,6 +71,18 @@ wchar_t *low_input (int y) {
                 ++i;
                 ++cx;
             }
+            break;
+
+        /* FIXME remove magic numbers */
+        /* ESC key */
+        case 27:
+        /* ^C */
+        case 3:
+        /* ^D */
+        case 4:
+            GLOBAL_exit = 1;
+            free (str);
+            return NULL;
             break;
 
         default:
@@ -104,26 +111,30 @@ wchar_t *low_input (int y) {
     }
     attroff (A_BOLD);
 
-    return (wchar_t *)str;
+    return str;
 }
 
 /* initgraphics: initialize graphics stuff */
-void low_initgraphics() {
+void low_initgraphics(void) {
 
     initscr();
-    cbreak();
+    raw();
     noecho();
 
     nonl();
     intrflush (stdscr, FALSE);
     keypad (stdscr, TRUE);
 
+    atexit (low_shutdowngraphics);
+
+    /* DEBUG is global; the debug output file */
     DEBUG = creat ("debug.txt", S_IRUSR | S_IWUSR);
 }
 
 /* shutdowngraphics: shutdown graphics stuff */
-void low_shutdowngraphics() {
+void low_shutdowngraphics(void) {
     endwin();
+
     close (DEBUG);
 }
 

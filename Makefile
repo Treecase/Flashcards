@@ -1,8 +1,9 @@
 
+# TODO proper Makefile
 
 
-flashcards : *.c *.h
-	gcc *.c -lncursesw -Wall -g -o flashcards
+flashcards : src/*.c src/*.h
+	gcc src/*.c -lncursesw -Wall -g -o flashcards
 
 clean :
 	rm flashcards

@@ -12,19 +12,22 @@
 
 /* TODO MOVE Card DEF */
 typedef struct {
-    String question, answer;
+    String  question,
+            answer;
+    int     pot;
 } Card;
 
 /* TODO MOVE Deck DEF */
 typedef struct {
     Card *cards;
-    int   len;
+    int   len,
+          size;
 } Deck;
 
 
 void show_card (Card card);
 
-String get_answer();
+String get_answer(void);
 
 void feedback (char correct, Card card);
 

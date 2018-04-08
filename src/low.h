@@ -12,14 +12,15 @@
 #define CENTER_Y    (LINES/2)
 
 
+
 void low_drawstring (int x, int y, wchar_t *str);
 
 void low_clearline (int l);
 
 wchar_t *low_input (int y);
 
-void low_initgraphics();
-void low_shutdowngraphics();
+void low_initgraphics(void);
+void low_shutdowngraphics(void);
 
 
 #endif
