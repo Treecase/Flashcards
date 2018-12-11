@@ -3,20 +3,18 @@ Flashcards
 ==========
 
 
-This is a simple flashcard program. It makes use of a simple spaced repetition algroithm to improve retention. It also uses a simple-to-edit file format for card decks.
+This is a simple flashcard program. It makes use of a simple spaced repetition algorithm to improve retention. It also uses a simple-to-edit file format for card decks.
 
-Included are some example decks (Japanese katakana and hiragana).
+Included are some example decks (Japanese Katakana, Hiragana, Numbers, and basic phrases).
 
 
-Flashcards are stored together as a deck in a plaintext file. This file is encoded using Unicode so as to support all languages. The structure of a card is thus:
+Flashcards are stored together as a deck in a UTF-8 plaintext file. The structure of a card is thus:
 
 ```
 ====
 QUESTION
----
 ANSWER
----
 ```
 
-Each cards starts with `====`, and ends at the next `====` or EOF. The QUESTION is the question, obviously, and accordingly, the ANSWER is the answer. The question and answer can be multiple lines long, ending at the `---`. Multiline question/answers are simply concatenated (`'\n'` replaced with `' '`) to one line.
+Each cards starts with `====`, and ends at either the next `====` or EOF. The QUESTION is the question, obviously, and ANSWER is the answer.
 

@@ -1,0 +1,55 @@
+
+CPPFLAGS := -g -Wall -Wextra
+LDFLAGS  :=
+
+
+SRCDIR := src
+OBJDIR := src/obj
+DEPDIR := src/dep
+
+SRC := $(wildcard $(SRCDIR)/*.cpp)
+OBJ := $(subst $(SRCDIR),$(OBJDIR),$(SRC:.cpp=.o)) $(OBJDIR)/$(GUI_TYPE).o
+DEP := $(subst $(SRCDIR),$(DEPDIR),$(SRC:.cpp=.d))
+
+ifeq ($(GUI_TYPE),cmdline)
+else
+  ifeq ($(GUI_TYPE),ncurses)
+    LDFLAGS += -lncursesw
+  else
+    $(error Unrecognized GUI type!)
+  endif
+endif
+
+
+
+flashcards : $(OBJ) |gui
+	$(CXX) $^ $(CPPFLAGS) $(LDFLAGS) -o $@
+
+include $(DEP)
+
+
+$(OBJDIR)/%.o:
+	$(CXX) $< -c $(CPPFLAGS) $(LDFLAGS) -o $@
+
+$(DEPDIR)/%.d: $(SRCDIR)/%.cpp
+	$(CXX) $(CPPFLAGS) $^ -MM -MT $(subst $(DEPDIR),$(OBJDIR),$(@:.d=.o)) -MF $@
+
+
+
+.PHONY: gui
+gui:
+	$(CXX) $(SRCDIR)/$(GUI_TYPE)/$(GUI_TYPE).cpp -c $(CPPFLAGS) $(LDFLAGS) -o $(OBJDIR)/$(GUI_TYPE).o
+
+.PHONY: install
+install : flashcards
+	mkdir -p $(DESTDIR)/$(PREFIX)/bin
+	cp $< $(DESTDIR)/$(PREFIX)/bin/$<
+
+.PHONY: uninstall
+uninstall:
+	rm -f $(DESTDIR)/$(PREFIX)/bin/flashcards
+
+.PHONY: clean
+clean :
+	rm -f flashcards $(OBJ) $(DEP)
+

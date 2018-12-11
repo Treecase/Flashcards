@@ -1,7 +1,6 @@
 flashcards
-debug
-supp.txt
-debug.txt
-o.txt
 manual/
-logs/
+src/obj/
+src/dep/
+Makefile
+log.txt
