@@ -1,40 +1,10 @@
-====
-一
----
-ichi
-====
-二
----
-ni
-====
-三
----
-san
-====
-四
----
-shi/yon
-====
-五
----
-go
-====
-六
----
-roku
-====
-七
----
-shichi/nana
-====
-八
----
-hachi
-====
-九
----
-kyuu
-====
-十
----
-zyuu
+Q:一; A:ichi;
+Q:二; A:ni;
+Q:三; A:san;
+Q:四; A:shi; A:yon;
+Q:五; A:go;
+Q:六; A:roku;
+Q:七; A:shichi; A:nana;
+Q:八; A:hachi;
+Q:九; A:kyuu;
+Q:十; A:zyuu;

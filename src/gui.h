@@ -1,21 +1,19 @@
-/*
- * Dummy GUI header; allows easy switching of GUIs
+/* Copyright (C) 2018-2020 Trevor Last
+ * See LICENSE file for copyright and license details.
+ * gui.h
+ *
+ * Flashcards frontend interface
  *
  */
 
 
 
-#ifndef __GUI_H
-#define __GUI_H
+#ifndef _GUI_H
+#define _GUI_H
 
+#include "card.h"
 
 #include <string>
-
-#include "deck.h"
-
-
-using namespace std;
-
 
 
 /* GUI:
@@ -25,12 +23,13 @@ using namespace std;
 class GUI
 {
 private:
-    string question,
-           answer;
+    std::string question,
+                answer;
+
 public:
-    void   show (Card c);
-    bool   feedback (string answer, Card question);
-    string read_answer();
+    void show(struct Card c);
+    bool feedback(std::string answer, struct Card question);
+    std::string read_answer();
 
     GUI();
     ~GUI();

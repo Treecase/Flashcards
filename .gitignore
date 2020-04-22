@@ -1,6 +1,4 @@
 flashcards
-manual/
 src/obj/
 src/dep/
 Makefile
-log.txt

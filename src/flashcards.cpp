@@ -1,159 +1,221 @@
-/*
+/* Copyright (C) 2018-2020 Trevor Last
+ * See LICENSE file for copyright and license details.
+ * flashcards.cpp
+ *
  * Flashcards program
  *
  */
 
+#include "card.h"
 #include "gui.h"
-#include "pot.h"
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <functional>
-#include <random>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 
 #include <getopt.h>
 
-using namespace std;
+#include <string>
+#include <vector>
 
 
-void handle_args (int argc, char *argv[]);
-unsigned random_int (unsigned max);
 
-
-unsigned max_pot = 5;
-char *deckfile_name = NULL;
+std::vector<Card> parse_deck(FILE *f);
 
 
 
 /* flashcards: simple flashcard program */
-int main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
+    srand(time(NULL));
 
-    handle_args (argc, argv);
-
-    /* read the deckfile */
-    ifstream deckfile;
-    if (deckfile_name != NULL)
+    char *deckfile_name = nullptr;
+    if (argc > 1)
     {
-        deckfile = ifstream (deckfile_name);
-        if (!deckfile.is_open())
-        {   cerr << "failed to open deckfile" << endl;
-            return EXIT_FAILURE;
-        }
+        deckfile_name = argv[1];
     }
     else
-    {   cerr << "NULL deckfile name" << endl;
-        return EXIT_FAILURE;
+    {
+        fprintf(stderr, "No deckfile given!\n");
+        exit(EXIT_FAILURE);
     }
 
-    Deck deck = Deck (deckfile);
-
-    deckfile.close();
-
-
-
-    /* create GUI */
-    GUI gui = GUI();
-
-
-    /* create a Pot */
-    Pot pot[max_pot];
-    pot[0] = Pot (&deck);
-    for (unsigned i = 1; i < max_pot; ++i)
-    {   pot[i] = Pot();
+    errno = 0;
+    FILE *deckfile = fopen(deckfile_name, "r");
+    if (deckfile == nullptr)
+    {
+        fprintf(
+            stderr,
+            "fopen(\"%s\") -- %s\n",
+            deckfile_name,
+            strerror(errno));
+        exit(EXIT_FAILURE);
     }
+
+    std::vector<std::vector<Card>> pots{ parse_deck(deckfile) };
+    fclose(deckfile);
+
+    GUI gui{};
+
 
     for(;;)
     {
-
-        unsigned i;
-        Pot p;
-        do
-        {   i = random_int (max_pot);
-            p = pot[i];
-        } while (p.size() <= 0);
-        //clog << "chose pot #" << i << endl;
-
-        /* pick a random card from the pot */
-        Card card = p.pick_card();
-
-        /* display card */
-        gui.show (card);
-
-        /* get answer */
-        string answer = gui.read_answer();
-        if (answer == "")
-        {   break;
+        std::vector<double> weights{};
+        for (auto pot : pots)
+        {
+            if (weights.size() == 0)
+            {
+                weights.push_back(1.0);
+            }
+            else
+            {
+                weights.push_back(weights.back() / 2.0);
+            }
         }
 
-        /* result */
-        bool correct = gui.feedback (answer, card);
-        if (correct)
+        size_t pot_idx = 0;
+        do
         {
-            if (i+1 < max_pot)
-            {   pot[i+1].add_card (card);
-                p.remove_card (card);
+            double val = (rand() % 1000) / 1000.0;
+            for (ssize_t i = weights.size()-1; i >= 0; --i)
+            {
+                if (val < weights[i])
+                {
+                    pot_idx = i;
+                    break;
+                }
+            }
+        } while (pots[pot_idx].empty());
+        auto &pot = pots[pot_idx];
+
+        size_t idx = rand() % pot.size();
+        Card card = pot[idx];
+
+        gui.show(card);
+        std::string ans = gui.read_answer();
+        if (ans == "")
+        {
+            break;
+        }
+
+        pot.erase(pot.cbegin() + idx);
+        if (gui.feedback(ans, card))
+        {
+            if (pot_idx + 1 >= pots.size())
+            {
+                pots.push_back(std::vector<Card>{});
+            }
+            pots[pot_idx + 1].push_back(card);
+
+            if (pots.front().empty())
+            {
+                pots.erase(pots.cbegin());
             }
         }
         else
-        {   if ((int)(i-1) >= 0)
-            {   pot[i-1].add_card (card);
-                p.remove_card (card);
+        {
+            if (pot_idx == 0)
+            {
+                pots.insert(pots.cbegin(), std::vector<Card>{});
+            }
+            pots[pot_idx].push_back(card);
+
+            if (pots.back().empty())
+            {
+                pots.erase(pots.cend());
             }
         }
     }
+
     return EXIT_SUCCESS;
 }
 
 
-
-/* random_int: generate a random int < max*/
-unsigned random_int (unsigned max)
+/* parse a deckfile */
+std::vector<Card> parse_deck(FILE *f)
 {
-    int weight_sum = 50;
-    int weights[max];
+    std::vector<Card> deck{};
 
-    weights[0] = 50;
-    for (unsigned i = 1; i < max; ++i)
-    {   weights[i] = weights[i-1] / 2;
-        weight_sum += weights[i];
-    }
+    char *text = (char *)calloc(10, sizeof(*text));
+    size_t n = 10;
 
-    static random_device rd;
-    static mt19937 gen (rd());
+    Card *card = nullptr;
 
-    uniform_int_distribution<> dis (0, weight_sum);
-
-    int random_number = dis (gen);
-    //clog << "rand = " << random_number << endl;
-
-    for (unsigned i = 0; i < max; ++i)
+    for(;;)
     {
-        if (random_number <= weights[i])
-        {   return i;
-        }
-        random_number -= weights[i];
-    }
-    cerr << "random_int failed!" << endl;
-    return -1;
-}
-
-/* handle_args: argv stuff */
-void handle_args (int argc, char *argv[])
-{
-    char const *const shortargs = "";
-
-    int opt;
-    while ((opt = getopt (argc, argv, shortargs)) != -1)
-    {   switch (opt)
+        errno = 0;
+        ssize_t len = getdelim(&text, &n, ';', f);
+        if (len == -1)
         {
-        /* TODO: add some options */
+            if (errno != 0)
+            {
+                fprintf(stderr, "getdelim -- %s\n", strerror(errno));
+                exit(EXIT_FAILURE);
+            }
+            else
+            {
+                /* hit EOF */
+                if (card == nullptr)
+                {
+                    fprintf(stderr, "Deckfile contains no cards!\n");
+                    exit(EXIT_FAILURE);
+                }
+                deck.push_back(*card);
+                delete card;
+                break;
+            }
+        }
+
+        bool done = false;
+        for (ssize_t i = 0; !done && i < len; ++i)
+        {
+            if (!isspace(text[i]))
+            {
+                if (i+1 < len && text[i+1] == ':')
+                {
+                    switch (text[i])
+                    {
+                    case 'Q':
+                        if (card != nullptr)
+                        {
+                            deck.push_back(*card);
+                            delete card;
+                        }
+                        card = new Card{};
+                        card->question = std::string(
+                            text + i + 2,
+                            len - i - 3);
+                        done = true;
+                        break;
+                    case 'A':
+                        card->answers.push_back(
+                            std::string(text + i + 2, len - i - 3));
+                        done = true;
+                        break;
+
+                    default:
+                        fprintf(
+                            stderr,
+                            "error -- unexpected character '%c'\n",
+                            text[i]);
+                        exit(EXIT_FAILURE);
+                        break;
+                    }
+                }
+                else
+                {
+                    fprintf(
+                        stderr,
+                        "error -- unexpected character '%c'\n",
+                        text[i]);
+                    exit(EXIT_FAILURE);
+                }
+            }
         }
     }
-    /* non-option argv elements */
-    if (optind < argc)
-    {   deckfile_name = argv[optind];
-    }
+    free(text);
+
+    return deck;
 }
 

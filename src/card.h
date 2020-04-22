@@ -1,5 +1,8 @@
-/*
- * Card
+/* Copyright (C) 2018-2020 Trevor Last
+ * See LICENSE file for copyright and license details.
+ * card.h
+ *
+ *  Flashcard
  *
  */
 
@@ -7,43 +10,13 @@
 #define _CARD_H
 
 #include <string>
+#include <vector>
 
 
-using namespace std;
-
-
-
-/* Card:
- *  A flashcard. Has a Question and an Answer.
- */
-class Card
+struct Card
 {
-public:
-    string  question,
-            answer;
-
-    bool operator==(Card other)
-    {
-        if (this->question == other.question
-         && this->answer == other.answer)
-        {   return true;
-        }
-        else
-        {   return false;
-        }
-    }
-
-    friend ostream &operator<<(ostream &out, Card &c)
-    {   out << (string)"Q: " << c.question << (string)"  A: " << c.answer;
-        return out;
-    }
-
-    Card()
-    {}
-    Card (string q, string a)
-    {   this->question = q;
-        this->answer   = a;
-    };
+    std::string question;
+    std::vector<std::string> answers;
 };
 
 

@@ -1,19 +1,21 @@
 
-CPPFLAGS := -g -Wall -Wextra
-LDFLAGS  :=
+CXXFLAGS=$(debug) -Wall -Wextra
+LDFLAGS=
 
 
-SRCDIR := src
-OBJDIR := src/obj
-DEPDIR := src/dep
+srcdir=src
+objdir=$(srcdir)/obj
+depdir=$(srcdir)/dep
 
-SRC := $(wildcard $(SRCDIR)/*.cpp)
-OBJ := $(subst $(SRCDIR),$(OBJDIR),$(SRC:.cpp=.o)) $(OBJDIR)/$(GUI_TYPE).o
-DEP := $(subst $(SRCDIR),$(DEPDIR),$(SRC:.cpp=.d))
 
-ifeq ($(GUI_TYPE),cmdline)
+
+src=$(wildcard $(srcdir)/*.cpp) $(srcdir)/gui/$(gui_type).cpp
+obj=$(subst $(srcdir),$(objdir),$(src:.cpp=.o))
+dep=$(subst $(srcdir),$(depdir),$(src:.cpp=.d))
+
+ifeq ($(gui_type),cmdline)
 else
-  ifeq ($(GUI_TYPE),ncurses)
+  ifeq ($(gui_type),ncurses)
     LDFLAGS += -lncursesw
   else
     $(error Unrecognized GUI type!)
@@ -22,34 +24,43 @@ endif
 
 
 
-flashcards : $(OBJ) |gui
-	$(CXX) $^ $(CPPFLAGS) $(LDFLAGS) -o $@
+flashcards : $(obj)
+	$(CXX) $^ $(CXXFLAGS) $(LDFLAGS) -o $@
 
-include $(DEP)
-
-
-$(OBJDIR)/%.o:
-	$(CXX) $< -c $(CPPFLAGS) $(LDFLAGS) -o $@
-
-$(DEPDIR)/%.d: $(SRCDIR)/%.cpp
-	$(CXX) $(CPPFLAGS) $^ -MM -MT $(subst $(DEPDIR),$(OBJDIR),$(@:.d=.o)) -MF $@
+include $(dep)
 
 
+$(objdir)/%.o : $(srcdir)/%.cpp
+	$(CXX) -c $< $(CXXFLAGS) $(LDFLAGS) -o $@
 
-.PHONY: gui
-gui:
-	$(CXX) $(SRCDIR)/$(GUI_TYPE)/$(GUI_TYPE).cpp -c $(CPPFLAGS) $(LDFLAGS) -o $(OBJDIR)/$(GUI_TYPE).o
+$(depdir)/%.d : $(srcdir)/%.cpp
+	$(CXX) $^ $(CXXFLAGS) $(LDFLAGS) -MM -MT $(subst $(depdir),$(objdir),$(@:.d=.o)) -MF $@
+
+$(obj) :|$(objdir)
+$(dep) :|$(depdir)
+
+$(objdir) :
+	@mkdir -p $@
+$(objdir)/gui :
+	@mkdir -p $@/gui
+$(depdir) :
+	@mkdir -p $@
+$(depdir)/gui :
+	@mkdir -p $@/gui
+
+
 
 .PHONY: install
-install : flashcards
-	mkdir -p $(DESTDIR)/$(PREFIX)/bin
-	cp $< $(DESTDIR)/$(PREFIX)/bin/$<
-
-.PHONY: uninstall
-uninstall:
-	rm -f $(DESTDIR)/$(PREFIX)/bin/flashcards
+install: flashcards
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
+	cp $< $(DESTDIR)$(PREFIX)/bin/$<
 
 .PHONY: clean
-clean :
-	rm -f flashcards $(OBJ) $(DEP)
+uninstall:
+	rm -f $(DESTDIR)$(PREFIX)/bin/flashcards
+
+.PHONY: clean
+clean:
+	@rm -f flashcards $(OBJ) $(DEP)
+
 

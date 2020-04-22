@@ -4,7 +4,8 @@
 
 gui_was_chosen=false
 gui='cmdline'
-prefix=
+prefix=/usr/local
+debug=
 
 for arg in "$@"; do
     case "$arg" in
@@ -15,12 +16,17 @@ for arg in "$@"; do
       gui=`echo $arg | sed 's/--gui=//'`
       gui_was_chosen=true
       ;;
+    --debug)
+      debug=-g
+      ;;
 
     *)
       echo 'usage: ./configure [OPTIONS]'
-      echo '--prefix=<path>     installation prefix'
-      echo '--gui=<type>        GUI type'
-      exit 0;;
+      echo 'options:'
+      echo '  --prefix=<path>: installation prefix'
+      echo '  --gui=<type>: GUI type'
+      exit 0
+      ;;
     esac
 done
 
@@ -37,10 +43,17 @@ if [ -f Makefile ]; then
 fi
 
 echo 'Generating Makefile...'
+
+echo "# Copyright (C) 2018-2020 Trevor Last" >>Makefile
+echo "# See LICENSE file for copyright and license details." >>Makefile
+echo -e "" >>Makefile
+
 echo "PREFIX=$prefix" >>Makefile
 
-echo "GUI_TYPE=$gui"
-echo "GUI_TYPE=$gui" >>Makefile
+echo "gui_type=$gui"
+echo "gui_type=$gui" >>Makefile
+
+echo "debug=$debug" >>Makefile
 cat Makefile.in >>Makefile
 
 echo 'Done.'
